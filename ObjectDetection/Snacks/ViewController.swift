@@ -131,7 +131,7 @@ class ViewController: UIViewController {
     // results but also uses more battery power.
     videoCapture.frameInterval = 1
 
-    videoCapture.setUp(sessionPreset: .hd1280x720) { success in
+    videoCapture.setUp(sessionPreset: .hd1920x1080) { success in
       if success {
         // Add the video preview into the UI.
         if let previewLayer = self.videoCapture.previewLayer {
@@ -181,14 +181,106 @@ class ViewController: UIViewController {
 
   func processObservations(for request: VNRequest, error: Error?) {
     //call show function
+      if (error != nil) {print("error: \(String(describing: error))")}
+      else{self.show(predictions: request.results as! [VNRecognizedObjectObservation])}
   }
 
-  func show(predictions: [VNRecognizedObjectObservation]) {
-   //process the results, call show function in BoundingBoxView
+    func show(predictions: [VNRecognizedObjectObservation]) {
+       //process the results, call show function in BoundingBoxView
+          guard predictions.isEmpty == false else {
+              print("Nothing found! It is empty!")
+              return
+          }
+        
+        
+        
+        for i in 0..<predictions.count{
+            print(predictions.count)
+            if i > self.maxBoundingBoxViews{
+                break
+            }
+            DispatchQueue.main.sync(execute:  {
+                let test_confidence = (predictions[i].labels.first!.confidence * 100).decimalString(3)
+                let res_confidence = predictions[i].labels.first!.confidence
+                let res_boundingBox = predictions[i].boundingBox
+                let res_identifier = predictions[i].labels.first!.identifier
+                
+                if res_confidence < 0.8 || i > 9{
+                    return
+                }
+            
+                let boundingBoxView = self.boundingBoxViews[i]
+                
+                let screenSize: CGRect = UIScreen.main.bounds
+                let screenWidth = screenSize.width
+                print(screenWidth)
+                
+                let screenHeight = screenSize.height
+                print(screenHeight)
+                
+                let rectFrame: CGRect = CGRect(
+                    x:CGFloat(res_boundingBox.minX) * CGFloat(screenWidth),
+                    y:CGFloat(res_boundingBox.minY) * CGFloat(screenHeight),
+                    width:CGFloat(res_boundingBox.width) * CGFloat(screenWidth),
+                    height:CGFloat(res_boundingBox.height) * CGFloat(screenHeight))
+    //            let rectFrame: CGRect = CGRect(
+    //                x:0,
+    //                y:0,
+    //                width:400,
+    //                height:100)
+                print(rectFrame)
+                print(rectFrame.origin)
+                print("rectFrame.minX is " + "\(rectFrame.minX)")
+                print("rectFrame.minY is " + "\(rectFrame.minY)")
+                print("rectFrame.width is " + "\(rectFrame.width)")
+                print("rectFrame.width is " + "\(rectFrame.height)")
+                print("screen.width is " + "\(screenWidth)")
+                print("screen.height is " + "\(screenHeight)")
+                
+                
+                print(res_identifier + " - " + test_confidence + "%")
+                  
+                boundingBoxView.show(
+                    frame: rectFrame,
+                    
+                    label: res_identifier + " - " + test_confidence + "%",
+                    
+                    color: self.colors[res_identifier]!)
+                
+          })
+            
+            
+//        for i in 0..<predictions.count{
+//            self.boundingBoxViews[i].hide()
+//        }
+        }
+        let ms:UInt32 = 1000
+        usleep(500 * ms)
+            
+        DispatchQueue.main.sync(execute: {
+            for j in 0..<self.maxBoundingBoxViews{
+                self.boundingBoxViews[j].hide()
+            }
+        })
+    }
 }
-
 extension ViewController: VideoCaptureDelegate {
   func videoCapture(_ capture: VideoCapture, didCaptureVideoFrame sampleBuffer: CMSampleBuffer) {
     predict(sampleBuffer: sampleBuffer)
   }
+}
+
+extension Float {
+    /// 准确的小数尾截取 - 没有进位
+    func decimalString(_ base: Self = 1) -> String {
+        let tempCount: Self = pow(10, base)
+        let temp = self*tempCount
+        let target = Self(Int(temp))
+        let stepone = target/tempCount
+        if stepone.truncatingRemainder(dividingBy: 1) == 0 {
+            return String(format: "%.0f", stepone)
+        }else{
+            return "\(stepone)"
+        }
+    }
 }

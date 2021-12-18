@@ -57,14 +57,14 @@ class BoundingBoxView {
     CATransaction.setDisableActions(true)
 
     let path = UIBezierPath(rect: frame)
+    print(path.cgPath)
     shapeLayer.path = path.cgPath
     shapeLayer.strokeColor = color.cgColor
     shapeLayer.isHidden = false
-
     textLayer.string = label
     textLayer.backgroundColor = color.cgColor
     textLayer.isHidden = false
-
+      
     let attributes = [
       NSAttributedString.Key.font: textLayer.font as Any
     ]
@@ -73,8 +73,11 @@ class BoundingBoxView {
                                       options: .truncatesLastVisibleLine,
                                       attributes: attributes, context: nil)
     let textSize = CGSize(width: textRect.width + 12, height: textRect.height)
+      print(textSize)
     let textOrigin = CGPoint(x: frame.origin.x - 2, y: frame.origin.y - textSize.height)
     textLayer.frame = CGRect(origin: textOrigin, size: textSize)
+      print(textOrigin)
+      
   }
 
   func hide() {
